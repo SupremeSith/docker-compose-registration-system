@@ -35,14 +35,45 @@
 <script>
     const API = 'http://localhost:3000'
 
-    const getClients = () => {
-        $.ajax({
-            url: `${API}/clients`,
-            success: clients => {
-                console.log(clients)
-            }
-        })
-    }
+    // [Função 1: createButton - Já vista]
+const createButton = (label, type) => {
+  return $('<button>').addClass(`btn btn-${type}`).html(label);
+}
+
+// [Função 2: renderRows]
+const renderRows = clients => {
+  const rows = clients.map(client => {
+    const updateButton = createButton('Atualizar', 'warning')
+    const removeButton = createButton('Excluir', 'danger')
+    removeButton.click(() => removeClient(client))
+
+    return $('<tr>')
+      .append($('<td>').append(client.name))
+      .append($('<td>').append(updateButton).append(removeButton))
+  })
+
+  $('#clientsRows').html(rows)
+}
+
+const removeClient = client => {
+  $.ajax({
+    method: 'DELETE',
+    url: `${API}/clients/${client._id}`,
+    success: getClients
+  })
+}
+
+
+const getClients = () => {
+    $.ajax({
+        url: `${API}/clients`,
+        success: clients => {
+            renderRows(clients) // <-- CORREÇÃO: Chama a função que renderiza a tabela
+        }
+    })
+}
+
+
 
     const saveClient = () => {
         const _id = $('[name=id]').val()
