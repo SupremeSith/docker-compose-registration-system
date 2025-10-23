@@ -1,169 +1,190 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Simple Registration</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Clients</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-
-        <div class="well">
+    <div class="container main-app">
+        
+        <div class="app-card form-card">
             <form id="clientForm">
                 <input name="id" type="hidden" />
                 
                 <div class="form-group">
-                    <label for="name">Client Name</label>
-                    <input class="form-control" name="name" placeholder="Enter name" required />
+                    <input class="app-input" name="name" placeholder="Client Name" required />
                 </div>
                 
-                <button type="button" class="btn btn-success" save>Save</button>
+                <div class="form-group">
+                    <input class="app-input" name="telephone" type="tel" placeholder="Telephone" required />
+                </div>
+                
+                <div class="form-group">
+                    <select class="app-select" name="status" required>
+                        <option value="" disabled selected>Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                </div>
+                
+                <div class="button-group horizontal">
+                    <button type="button" class="app-button primary" save>Save Client</button>
+                    <button type="button" class="app-button secondary" clear>Clear</button>
+                </div>
             </form>
         </div>
 
-        <table class="table table-striped" id="clients">
-            <thead>
-                <tr>
-                    <th>Name</th> 
-                    <th style="width: 30%; text-align: right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="clientsRows"></tbody>
-        </table>
+        <div class="app-card list-card">
+            <div class="client-list">
+                <div class="list-header">
+                    <span class="header-name">Name</span>
+                    <span class="header-tel">Telephone</span>
+                    <span class="header-status">Status</span>
+                    <span class="header-actions">Actions</span>
+                </div>
+                <div id="clientsRows">
+                    
+</div>
+            </div>
+        </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
-<script>
-    // API Endpoint configuration
-    const API = 'http://localhost:3000'
+    <script>
+        const API = 'http://localhost:3000'
 
-    // UI utility function
-    const createButton = (label, type) => {
-        return $('<button>').addClass(`btn btn-sm btn-${type}`).html(label);
-    }
-
-    // Clears the form fields
-    const clearForm = () => {
-        $('[name=id]').val('')
-        $('[name=name]').val('')
-        $('[name=name]').focus()
-    }
-
-    // Loads client data into the form
-    const loadClient = client => {
-        $('[name=id]').val(client._id)
-        $('[name=name]').val(client.name)
-        $('[name=name]').focus()
-    }
-
-    // DELETE request
-    const removeClient = client => {
-        if (!confirm(`Are you sure you want to remove ${client.name}?`)) {
-            return;
+        const createActionButton = (iconSrc, type, altText) => {
+            const img = $('<img>').attr('src', iconSrc).attr('alt', altText);
+            return $('<button>').addClass(`action-button btn-action-${type}`).append(img);
         }
-        $.ajax({
-            method: 'DELETE',
-            url: `${API}/clients/${client._id}`,
-            success: getClients 
-        })
-    }
-    
-    const renderRows = clients => {
-        const rows = clients.map(client => {
-            const updateButton = createButton('Update', 'warning')
-            updateButton.click(() => loadClient(client))
-            
-            const removeButton = createButton('Delete', 'danger')
-            removeButton.click(() => removeClient(client))
 
-            const actionContainer = $('<div>').addClass('action-buttons')
-                .append(updateButton)
-                .append(removeButton)
+        const clearForm = () => {
+            $('[name=id]').val('');
+            $('[name=name]').val('');
+            $('[name=telephone]').val('');
+            $('[name=status]').val('');
+            $('[name=name]').focus();
+        }
 
-            const row = $('<tr>')
-                .append($('<td>').text(client.name)) 
-                .append($('<td>').append(actionContainer));
+        const loadClient = client => {
+            $('[name=id]').val(client._id);
+            $('[name=name]').val(client.name);
+            $('[name=telephone]').val(client.telephone);
+            $('[name=status]').val(client.status);
+            $('[name=name]').focus();
+        }
+
+        const removeClient = client => {
+            if (!confirm(`Remove ${client.name}?`)) {
+                return;
+            }
+            $.ajax({
+                method: 'DELETE',
+                url: `${API}/clients/${client._id}`,
+                success: getClients,
+                error: () => alert('Error deleting client.')
+            });
+        }
+        
+        const renderRows = clients => {
+            if (clients.length === 0) {
+                $('#clientsRows').html('<div class="empty-state">No clients registered.</div>');
+                return;
+            }
+
+            const rows = clients.map(client => {
+                const editIconSrc = 'https://docs-assets.developer.apple.com/published/28799a62d35e817f774fdd758513dbf7/icons-symbols-meaning-compose~dark%402x.png';
+                const deleteIconSrc = 'https://docs-assets.developer.apple.com/published/ffd9f8dbeaa17361e545d51403c8536a/icons-symbols-meaning-delete~dark%402x.png';
+
+                const updateButton = createActionButton(editIconSrc, 'edit', 'Edit');
+                updateButton.click(() => loadClient(client));
                 
-            row.on('mousedown', function() {
-                $(this).addClass('row-active');
-            }).on('mouseup mouseleave', function() {
-                const $this = $(this);
-                setTimeout(() => {
-                    $this.removeClass('row-active');
-                }, 100); 
+                const removeButton = createActionButton(deleteIconSrc, 'delete', 'Delete');
+                removeButton.click(() => removeClient(client));
+
+                const actionContainer = $('<div>').addClass('item-actions').append(updateButton).append(removeButton);
+
+                const statusClass = client.status.toLowerCase();
+                const statusSpan = $('<span>').addClass(`status-badge ${statusClass}`).text(client.status);
+
+                const row = $('<div>').addClass('list-item')
+                    .append($('<span>').addClass('item-name').text(client.name)) 
+                    .append($('<span>').addClass('item-tel').text(client.telephone))
+                    .append($('<span>').addClass('item-status').append(statusSpan))
+                    .append(actionContainer);
+                    
+                return row;
             });
 
-            return row;
-        })
-
-        $('#clientsRows').html(rows)
-    }
-    
-    // GET all clients
-    const getClients = () => {
-        const saveButton = $('[save]');
-        saveButton.removeClass('row-active'); 
+            $('#clientsRows').html(rows);
+        }
         
-        $.ajax({
-            url: `${API}/clients`,
-            success: renderRows,
-            error: (xhr, status, error) => {
-                console.error("Error fetching clients. Is the server running?", error);
-                $('#clientsRows').html(`<tr><td colspan="2" class="text-danger" style="text-align: center;">API connection error: ${error}</td></tr>`);
-            }
-        })
-    }
-
-    // POST/PUT client
-    const saveClient = () => {
-        const _id = $('[name=id]').val()
-        const name = $('[name=name]').val()
-        const saveButton = $('[save]');
-
-        if (!name.trim()) {
-            alert('Name cannot be empty.')
-            $('[name=name]').focus()
-            return
+        const getClients = () => {
+            $.ajax({
+                url: `${API}/clients`,
+                success: renderRows,
+                error: (xhr, status, error) => {
+                    $('#clientsRows').html('<div class="empty-state error">API connection error.</div>');
+                }
+            });
         }
 
-    // Save button tap feedback
-        saveButton.addClass('row-active'); 
-        setTimeout(() => saveButton.removeClass('row-active'), 300);
+        const saveClient = () => {
+            const _id = $('[name=id]').val();
+            const name = $('[name=name]').val();
+            const telephone = $('[name=telephone]').val();
+            const status = $('[name=status]').val();
 
-        $.ajax({
-            method: _id ? 'PUT' : 'POST',
-            url: _id ? `${API}/clients/${_id}` : `${API}/clients`,
-            data: { name: name },
-            success: () => {
-                getClients() 
-                clearForm()  
-            },
-            error: () => {
-                saveButton.removeClass('row-active');
-                alert('Error saving client.');
+            if (!name.trim() || !telephone.trim() || !status) {
+                alert('All fields must be filled.');
+                return;
             }
-        })
-    }
 
-    // Initialization
-    $(() => {
-        getClients()
-        
-        // Save button tap event handler
-        $('[save]').on('mousedown', function() {
-             $(this).addClass('row-active');
-        }).on('mouseup mouseleave', function() {
-             const $this = $(this);
-             setTimeout(() => {
-                 $this.removeClass('row-active');
-             }, 100); 
+            const clientData = { 
+                name: name, 
+                telephone: telephone, 
+                status: status 
+            };
+
+            const saveButton = $('[save]');
+            saveButton.attr('disabled', true).text(_id ? 'Updating...' : 'Saving...');
+
+            $.ajax({
+                method: _id ? 'PUT' : 'POST',
+                url: _id ? `${API}/clients/${_id}` : `${API}/clients`,
+                data: clientData,
+                success: () => {
+                    getClients(); 
+                    clearForm();  
+                },
+                error: (xhr) => {
+                    alert(`Error saving client: ${xhr.responseJSON ? xhr.responseJSON.message : xhr.statusText}`);
+                },
+                complete: () => {
+                    saveButton.attr('disabled', false).text('Save Client');
+                }
+            });
+        }
+
+        $(() => {
+            getClients();
+            
+            $('[save]').click(saveClient);
+            $('[clear]').click(clearForm);
+            
+            $('#clientForm').on('keypress', function(e) {
+                if(e.which === 13) {
+                    e.preventDefault();
+                    saveClient();
+                }
+            });
         });
-
-        $('[save]').click(saveClient)
-    })
-</script>
+    </script>
 
 </body>
 </html>

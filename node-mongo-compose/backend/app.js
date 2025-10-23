@@ -11,25 +11,30 @@ const server = express();
 // Database connection
 mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://db/mydb', { 
-  useNewUrlParser: true, 
-  useUnifiedTopology: true 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
 })
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch(err => console.error('❌ MongoDB connection error:', err));
 
 
 // Middlewares
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
+
+// Configure CORS 
 server.use(cors());
 
 // Test route
-server.get('/', (req, res) => res.send('Hello everybody!'));
+server.get('/', (req, res) => res.send('Welcome to the Client Management API!'));
 
-// Model
+
 const Client = restful.model('Client', {
-  name: { type: String, required: true }
+    name: { type: String, required: true },
+    telephone: { type: Number, required: true }, // Added Telephone (assuming number type for simplicity)
+    status: { type: String, required: true }      // Added Status
 });
+// ---------------------
 
 Client.methods(['get', 'post', 'put', 'delete']);
 
@@ -40,4 +45,4 @@ Client.register(server, '/clients');
 
 // Server
 const PORT = 3000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
